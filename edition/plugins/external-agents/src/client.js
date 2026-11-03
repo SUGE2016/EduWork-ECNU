@@ -1,6 +1,8 @@
+import remote from './remote.js'
+import {Settings, settingsZh, settingsEn, settingsCss} from './settings.js'
 import React, {useEffect, useRef, useState} from 'react'
 const h = React.createElement
-export const inject = ['slots', 'locale']
+export const inject = ['slots', 'locale', 'remote']
 const NS = 'ecnu-external-agents'
 const zh = {title: '外部任务', running: '运行中', completed: '已完成', failed: '失败', cancelled: '已取消', refused: '已拒绝', limited: '达到输出上限', unknown: '状态未知', empty: '此任务没有当前插件的状态记录。', note: '结果在主聊天中查看；此面板只展示宿主观测到的状态。', unknownNote: '宿主重启或未记录状态，不能据此判断任务仍在运行。', close: '关闭任务面板'}
 const en = {title: 'External tasks', running: 'Running', completed: 'Completed', failed: 'Failed', cancelled: 'Cancelled', refused: 'Refused', limited: 'Output limit', unknown: 'Unknown', empty: 'No status observation is available for this task.', note: 'Results appear in the main chat. This panel shows host-observed status only.', unknownNote: 'The host restarted or no observation was recorded; this does not mean the task is still running.', close: 'Close task panel'}
@@ -46,11 +48,24 @@ function Panel({sessionId, useSessions, t}) {
           status === 'unknown' && h('p', null, t('unknownNote')))
       }), h('p', null, t('note'))))
 }
-export function apply(ctx) {
-  ctx.locale.register(NS, {zh, en})
+export async function apply(ctx) {
+  ctx.locale.register(NS, {zh: {...zh, ...settingsZh}, en: {...en, ...settingsEn}})
+  const unmount = await ctx.remote.$mount(remote)
+  ctx.effect(() => unmount)
+  ctx.inject(['remote.ecnuAgentConnections'], inner => {
+    const t = inner.locale.bind(NS)
+    const manage = async request => {
+      const result = await inner.remote.ecnuAgentConnections.manage(request)
+      if (!result.ok) throw new Error('Agent operation failed')
+      return result.value
+    }
+    inner.slots.inject('settings.section', () => inner.slots.register({
+      name: 'settings.section', id: NS, order: 12, locale: NS, label: () => t('connections'), inject: () => ({manage, t}),
+    }, Settings))
+  })
   ctx.effect(() => {
     const style = document.createElement('style')
-    style.textContent = css; document.head.append(style)
+    style.textContent = css + settingsCss; document.head.append(style)
     return () => style.remove()
   })
   ctx.slots.inject('conversation.session.header.actions', () => ctx.slots.register({

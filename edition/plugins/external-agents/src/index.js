@@ -1,3 +1,4 @@
+import {Connections} from './connections.js'
 import {randomUUID} from 'node:crypto'
 import {z} from 'zod'
 import {carrierKeyOf} from '@deepseek-ai/dsh-scope'
@@ -7,6 +8,7 @@ import {KEY, RECORD, fold, observe, present} from './state.js'
 export const name = 'ecnu-external-agent-status'
 export const inject = ['subagents', 'sessionProjections']
 export function apply(ctx) {
+  ctx.plugin(Connections)
   const epoch = randomUUID()
   const row = z.object({id: z.string(), runId: z.string(), provider: z.string(), epoch: z.string(),
     startedAt: z.number().nullable(), endedAt: z.number().nullable(), stopReason: z.string().nullable()})

@@ -2,13 +2,3 @@
 - insert:
     - id: ecnu-external-agent-status
       name: '@chatecnu-work/dsh-external-agents'
-    - id: subagent-codex
-      name: '@deepseek-ai/dsh-subagent-codex'
-      config:
-        permissionMode: never
-    - id: tool-subagent-codex
-      name: '@deepseek-ai/dsh-tool-subagent'
-      config:
-        provider: codex
-        toolName: subagent_codex
-        maxDepth: provider-managed
